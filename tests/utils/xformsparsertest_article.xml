@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <!-- xmlns="http://www.paycash.ru/2005/GoodsXML"  -->
+<article
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="article.xsd"
+ xmlns:db="http://docbook.org/ns/docbook"
+ xmlns:xf="http://www.w3.org/2002/xforms"
+ xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+ code="bee" version="1307360324">
+  <title xml:lang="ru">Билайн</title>
+  <title xml:lang="en">Beeline</title>
+  <!--
+  Важно! Квитанция - витриннозависимый атрибут. Т.е. на одной витрине для
+  данного товара квитанция может быть включена, а
+  на другой витрине - нет
+ -->
+  <receipt>1</receipt><!-- заказ квитанции -->
+  <extraReceipt>1</extraReceipt><!-- заказ дополнительной квитанции -->
+  <url>http://www.beeline.ru</url>
+	<!-- Для каждого языка свой тег book, внутри которого секции на соответствующем
+	языке -->
+  <db:book xml:lang="ru">
+    <db:section role="shortinfo">
+      <db:title>Прямое пополнение лицевого счета</db:title>
+      <db:para>Расчеты по операциям осуществляются
+        <db:ulink url="http://www.tavrich.ru/e-commerce/">ОАО Банк «Таврический»</db:ulink>, лицензия Банка России №2304.</db:para>
+    </db:section>
+  </db:book>
+	<db:book xml:lang="en">
+    <db:section role="shortinfo">
+      <db:title>Direct money transfer to mobile phone account</db:title>
+      <db:para>Payments processed by
+        <db:ulink url="http://www.tavrich.ru/e-commerce/">Saint-Petersburg Commercial Bank "Tavrichesky" (joint-stock)</db:ulink>, license #2304.</db:para>
+    </db:section>
+  </db:book>
+	<moneySourceTypes>
+		<moneySourceType code="beeline">
+			<methods>
+				<method>WEB</method>
+				<method>SMS</method>
+			</methods>
+			<smsTemplate>
+				<serviceNumber>3116</serviceNumber>
+				<abbrev>bee</abbrev><!-- может быть пустым -->
+				<separator> </separator><!-- разделитель между параметрами, на мегафоне это ":" -->
+				<params>
+					<param required="1" bind="account">
+						<title xml:lang="ru">Номер телефона</title>
+						<title xml:lang="en">Phone number</title>
+					</param>
+					<param required="1" bind="sum">
+						<title xml:lang="ru">Сумма платежа</title>
+						<title xml:lang="en">Payment sum</title>
+					</param>
+				</params>
+			</smsTemplate>
+			<!-- Лимиты (в копейках). Выводятся лимиты для дефолтной группы, после того как
+			пользователь ввёл номер телефона. Витрина запрашивает персональные
+			лимиты для данного пользователя через веб-сервис ПЦ, после чего
+			отображает их пользователю
+			-->
+			<limits>
+				<min>1000</min>
+				<max>100000</max>
+				<maxSumDay>300000</maxSumDay>
+				<maxCountDay>10</maxCountDay>
+				<maxSumWeek>500000</maxSumWeek>
+				<maxCountWeek>15</maxCountWeek>
+				<maxSumMonth>1000000</maxSumMonth>
+				<maxCountMonth>30</maxCountMonth>
+			</limits>
+		</moneySourceType>
+	</moneySourceTypes>
+	<!-- Регионы к которым прибит товар -->
+	<regions>
+		<region id="21"/>
+		<region id="39"/>
+	</regions>
+  <xf:model>
+    <xf:instance>
+      <payLink xmlns="">
+        <account/>
+        <sum>100</sum><!-- Таким образом задаются значения полей по-умолчанию -->
+      </payLink>
+    </xf:instance>
+    <xf:bind id="account" nodeset="account" calculate="concat('7', def, phone)" type="xsd:integer"/>
+    <!-- Для def и phone нет атрибута @nodeset в результате он не уйдёт в ПЦ-->
+    <xf:bind id="phone" required="true()" type="xsd:integer" constraint="string-length(.) = 7 and . &gt; '0000000' and . &lt; '9999999'"/>
+    <xf:bind id="def" required="true()" type="xsd:integer" constraint=". &gt; 900 and . &lt; 999"/>
+    <xf:bind id="sum" nodeset="sum" required="true()" type="xsd:decimal"/>
+  </xf:model>
+  <payLinkForm>
+		<!--
+			Группа отобразится в виде двух полей стоящих на одной строке
+			названия полей будут всплывать подсказками при попадании фокуса на контрол
+		-->
+		<xf:group>
+			<xf:label xml:lang="ru">Телефон получателя</xf:label>
+			<xf:input bind="def">
+				<xf:label xml:lang="ru">Код телефона</xf:label>
+				<xf:label xml:lang="en">Phone code</xf:label>
+				<xf:alert xml:lang="ru">Неверный код телефона получателя</xf:alert>
+				<xf:alert xml:lang="en">Invalid target phone code</xf:alert>
+    	</xf:input>
+
+	    <xf:input bind="phone">
+				<xf:label xml:lang="ru">Номер телефона</xf:label>
+				<xf:label xml:lang="en">Target phone</xf:label>
+				<xf:alert xml:lang="ru">Неверный телефон получателя</xf:alert>
+				<xf:alert xml:lang="en">Invalid target phone number</xf:alert>
+    	</xf:input>
+		</xf:group>
+
+    <xf:input bind="sum">
+      <xf:label xml:lang="ru">Сумма</xf:label>
+      <xf:label xml:lang="en">Payment sum</xf:label>
+			<xf:alert xml:lang="ru">Сумма введена неверно</xf:alert>
+			<xf:alert xml:lang="en">Invalid payment sum</xf:alert>
+    </xf:input>
+
+    <xf:submit>
+      <xf:label xml:lang="ru">Заплатить</xf:label>
+      <xf:label xml:lang="en">Submit</xf:label>
+    </xf:submit>
+  </payLinkForm>
+</article>
