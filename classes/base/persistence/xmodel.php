@@ -1,13 +1,10 @@
 <?php
 require_auto(XENOPHAGE . '/classes/xwidget.php');
 require_auto(XENOPHAGE . '/classes/modeliterator.php');
-require_auto(XENOPHAGE . '/classes/widgets/iunsignedbigint.php');
 
-class ModelException extends Exception {
-	public $gen_class;
-}
+AutoLoad::path(dirname(__FILE__).'/modelexception.php');
 
-class XModel extends XWidget {
+class AbstractModel extends XWidget {
 	public $_engine = null;
 	public $_sql = null;
 	public $_table = null;
@@ -17,13 +14,7 @@ class XModel extends XWidget {
 
 	protected $id = null;
 
-	protected $_belongs_to = array();
-	protected $_has_one = array();
-	protected $_has_many = array();
-	protected $_has_and_belongs_to_many = array();
-	protected $_through = array();
-	protected $_indexes = array();
-	protected $_class = null;
+	protected $_model = array(); //array describing model and all it's relations
 	protected static $_tables = array();
 
 	protected $_method = null;
@@ -34,13 +25,11 @@ class XModel extends XWidget {
 	* it treated as new object properties, otherwise it treated
 	* as an object id
 	*/
-	public function __construct($initializer = null) {
-		$this->_engine = XEngine::instance();
-
+	public function __construct() {
 		parent::__construct();
+
 		$this->_sql = $this->_engine->_sql;
-		
-		$this->_table = $this->get_table_name();
+		$this->_table = $this->getTableName();
 
 		self::$relations[$this->_class] = array(
 			'has_one' => array(),
@@ -57,6 +46,10 @@ class XModel extends XWidget {
 			else
 				$this->load($initializer);
 		}
+	}
+
+	public static function createModel() {
+		return array();
 	}
 
 	public function __destruct() {
@@ -383,10 +376,6 @@ class XModel extends XWidget {
 
 			return call_user_func_array(array($iterator, $method), $args);
 		}
-
-		//Delegating other methods to the engine
-		if (method_exists($this->_engine, $method))
-			return call_user_func_array(array($this->_engine,$method),$args);
 
 		throw new ModelException(
 			'Method not supported by this model: '.get_class($this).'::'.$method);

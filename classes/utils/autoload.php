@@ -23,22 +23,31 @@ class AutoLoad {
 			} else {
 				self::addFile($filename);
 			}
+		} else {
+			if ('cli' == php_sapi_name())
+				$eol = PHP_EOL;
+			else
+				$eol = '<br/>';
+
+			$message = 'Path: "'.$filename.'" not found';
+			echo $message, $eol;
+			throw new Exception($message);
 		}
 	}
 
 	/**
 	* Add file with exact filename
 	*/
-	public static function addFile($filename) {
-		if (is_file($filename)) {
-			$chunks = explode(".", strtolower(basename($filename)));
+	public static function addFile($fileName) {
+		if (is_file($fileName)) {
+			$chunks = explode(".", strtolower(basename($fileName)));
 			$extension = array_pop($chunks);
-			$name = implode('.', $chunks);
+			$className = implode('.', $chunks);
 
-			if ($extension === 'php' && !isset(self::$files[$name])) {
-				self::$files[$name] = $filename;
+			if ($extension === 'php' && !isset(self::$files[$className])) {
+				self::$files[$className] = $fileName;
 				if ('cli' == php_sapi_name()) {
-					require_once($filename);
+					require_once($fileName);
 				}
 			}
 		}
@@ -48,21 +57,15 @@ class AutoLoad {
 	* Load source files from given class
 	* @param string $classname - class to load
 	*/
-	public function loadClass($classname) { 
-		$result = false;
-		if ($classname) { 
-			$classname = strtolower($classname);
-			if (array_key_exists($classname, self::$files)) {
-				require_once(self::$files[$classname]);
-				$result = (class_exists($classname) || interface_exists($classname));
-			}
-		}
+	public static function loadClass($className) { 
+		$lName = strtolower($className);
 
-		return $result;
+		if (array_key_exists($lName, self::$files)) 
+			require_once(self::$files[$lName]);
 	}
 }
 
-class AutoloadException extends Exception {
+class AutoLoadException extends Exception {
 	protected $classname = null;
 	
 	public function __construct($classname) { 
@@ -76,8 +79,5 @@ class AutoloadException extends Exception {
 	}
 }
 
-function __autoload($classname) {
-	if (! AutoLoad::loadClass($classname)) 
-		throw new AutoloadException($classname);
-}
+spl_autoload_register(array('AutoLoad', 'loadClass'));
 ?>

@@ -6,7 +6,6 @@ require_once(dirname(__FILE__).'/__.php');
 AutoLoad::path(dirname(__FILE__).'/../exceptions/');
 AutoLoad::path(dirname(__FILE__).'/../widgets/xwidget.php');
 AutoLoad::path(dirname(__FILE__).'/urldispatcher.php');
-AutoLoad::path(dirname(__FILE__).'/template_engines/templateengine.php');
 
 class Engine extends XWidget {
 	private static $__instance = null; // static instance of XEngine
@@ -24,26 +23,16 @@ class Engine extends XWidget {
 			$this->_path = $this->getRequestPath();
 			$this->_dispatch_rule = URLDispatcher::getRuleByURL($this->_path);
 
-			try {
-				$this->runController(
-					$this->_dispatch_rule['controller'],
-					$this->_dispatch_rule['action'],
-					$this->_dispatch_rule['params']
-				);
+//TODO: run all controllers binded to this url
+			$this->runController(
+				$this->_dispatch_rule['controller'],
+				$this->_dispatch_rule['action'],
+				$this->_dispatch_rule['params']
+			);
 
-				if (isset($this->_dispatch_rule['format']))
-					$this->format($this->_dispatch_rule['format']);
-
-			} catch (AutoloadException $e) {
-				$missing_class = $e->getClass();
-
-				if (!strcasecmp($controller_class, $missing_class))
-					throw new HTTPException(
-						'controller "'.$controller_class.'" not found', 404);
-				else
-					throw new HTTPException(
-						'controller requirements not found: '.$missing_class, 500);
-			}
+			if (isset($this->_dispatch_rule['format']))
+				$this->format($this->_dispatch_rule['format']);
+			
 
 		} catch (Exception $e) {
 			$this->exception_handler($e);

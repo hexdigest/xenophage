@@ -1,42 +1,4 @@
 <?php
-/**
- *  File containing the Inflector class
- *
- *  (PHP 5)
- *
- *  @package PHPonTrax
- *  @version $Id: inflector.php 201 2006-05-25 08:58:10Z john $
- *  @copyright (c) 2005 John Peterson
- *
- *  Permission is hereby granted, free of charge, to any person obtaining
- *  a copy of this software and associated documentation files (the
- *  "Software"), to deal in the Software without restriction, including
- *  without limitation the rights to use, copy, modify, merge, publish,
- *  distribute, sublicense, and/or sell copies of the Software, and to
- *  permit persons to whom the Software is furnished to do so, subject to
- *  the following conditions:
- *
- *  The above copyright notice and this permission notice shall be
- *  included in all copies or substantial portions of the Software.
- *
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- *  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- *  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- *  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- *  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- *  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- *  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
-/**
- *  Implement the Trax naming convention
- *
- *  This class provides static methods to implement the
- *  {@tutorial PHPonTrax/naming.pkg Trax naming convention}.
- *  Inflector is never instantiated.
- *  @tutorial PHPonTrax/Inflector.cls
- */
-
 AutoLoad::path(dirname(__FILE__). '/inflections.php');
  
 class Inflector {
@@ -49,17 +11,15 @@ class Inflector {
      *  @return string  Plural of $word
      */
     public static function pluralize($word) {
-			if (is_object($word))
-				$word = get_class($word);
+			if (! in_array($word, Inflections::$uncountables)) { 
+				$original = $word;   
+					foreach(Inflections::$plurals as $plural_rule) {
+						$word = preg_replace($plural_rule['rule'], $plural_rule['replacement'], $word);
+						if ($original != $word) break;
+					}
+			}
 
-       	if(!in_array($word, Inflections::$uncountables)) { 
-            $original = $word;   
-            foreach(Inflections::$plurals as $plural_rule) {
-                $word = preg_replace($plural_rule['rule'], $plural_rule['replacement'], $word);
-                if($original != $word) break;
-            }
-        }
-        return $word;
+			return $word;
     }
 
     /**
@@ -69,17 +29,15 @@ class Inflector {
      *  @return string  Singular of $word
      */
     public static function singularize($word) {
-			if (is_object($word))
-				$word = get_class($word);
+			if(! in_array($word, Inflections::$uncountables)) { 
+				$original = $word;   
+				foreach (Inflections::$singulars as $singular_rule) {
+					$word = preg_replace($singular_rule['rule'], $singular_rule['replacement'], $word);
+					if ($original != $word) break;
+				}
+			}
 
-        if(!in_array($word, Inflections::$uncountables)) { 
-            $original = $word;   
-            foreach(Inflections::$singulars as $singular_rule) {
-                $word = preg_replace($singular_rule['rule'], $singular_rule['replacement'], $word);
-                if($original != $word) break;
-            }
-        }
-        return $word;
+			return $word;
     }
 
     /**
@@ -89,10 +47,7 @@ class Inflector {
      *  @return string Capitalized $word
      */
     public static function capitalize($word) {
-			if (is_object($word))
-				$word = get_class($word);
-
-        return ucfirst(strtolower($word));     
+			return ucfirst(strtolower($word));     
     }
 
     /**
@@ -104,9 +59,8 @@ class Inflector {
      *  @return string  Camel case form of the phrase
      */
     public static function camelize($lower_case_and_underscored_word) {
-			if (is_object($lower_case_and_underscored_word))
-				$lower_case_and_underscored_word = get_class($lower_case_and_underscored_word);
-        return str_replace(" ","",ucwords(str_replace("_"," ",$lower_case_and_underscored_word)));
+			return str_replace(" ", "", ucwords(str_replace("_", " ", 
+				$lower_case_and_underscored_word)));
     }
 
     /**
@@ -117,11 +71,11 @@ class Inflector {
      *  @return string Lower case and underscored form of the phrase
      */
     public static function underscore($camel_cased_word) {
-			if (is_object($camel_cased_word))
-				$camel_cased_word = get_class($camel_cased_word);
+			$camel_cased_word = preg_replace('/([A-Z]+)([A-Z])/', '\1_\2',
+				$camel_cased_word);
 
-        $camel_cased_word = preg_replace('/([A-Z]+)([A-Z])/','\1_\2',$camel_cased_word);
-        return strtolower(preg_replace('/([a-z])([A-Z])/','\1_\2',$camel_cased_word));
+			return strtolower(preg_replace('/([a-z])([A-Z])/', '\1_\2',
+				$camel_cased_word));
     }
 
     /**
@@ -133,10 +87,7 @@ class Inflector {
      *  blanks and the first letter of each word capitalized
      */
     public static function humanize($lower_case_and_underscored_word) {
-			if (is_object($lower_case_and_underscored_word))
-				$lower_case_and_underscored_word = get_class($lower_case_and_underscored_word);
-
-        return ucwords(str_replace("_"," ",$lower_case_and_underscored_word));
+			return ucwords(str_replace("_", " ", $lower_case_and_underscored_word));
     }
     
     /**
@@ -146,10 +97,8 @@ class Inflector {
      *  @return string A string that has all words capitalized and splits on existing caps.
      */    
     public static function titleize($word) {
-			if (is_object($word))
-				$word = get_class($word);
-
-        return preg_replace('/\b([a-z])/', self::capitalize('$1'), self::humanize(self::underscore($word)));
+			return preg_replace('/\b([a-z])/', self::capitalize('$1'), 
+				self::humanize(self::underscore($word)));
     }
 
     /**
@@ -159,10 +108,7 @@ class Inflector {
      *  @return string All underscores converted to dashes
      */    
     public static function dasherize($underscored_word) {
-			if (is_object($underscored_word))
-				$underscored_word = get_class($underscored_word);
-
-        return str_replace('_', '-', self::underscore($underscored_word));
+			return str_replace('_', '-', self::underscore($underscored_word));
     }
 
     /**
@@ -175,10 +121,7 @@ class Inflector {
      *  @return string Pluralized lower_case_underscore form of name
      */
     public static function tableize($class_name) {
-			if (is_object($class_name))
-				$class_name = get_class($class_name);
-
-        return self::pluralize(self::underscore($class_name));
+			return self::pluralize(self::underscore($class_name));
     }
 
     /**
@@ -188,10 +131,7 @@ class Inflector {
      *  @return string Singular CamelCase form of $table_name
      */
     public static function classify($table_name) {
-			if (is_object($table_name))
-				$table_name = get_class($table_name);
-
-        return self::camelize(self::singularize($table_name));
+			return self::camelize(self::singularize($table_name));
     }
 
     /**
@@ -202,40 +142,7 @@ class Inflector {
      *  @return string Column name of the foreign key column
      */
     public static function foreign_key($class_name) {
-			if (is_object($class_name))
-				$class_name = get_class($class_name);
-
-        return self::underscore($class_name) . "_id";
-    }
-
-
-    /**
-     *  Add to a number st, nd, rd, th
-     *
-     *  @param integer $number Number to append to
-     *    key
-     *  @return string Number formatted with correct st, nd, rd, or th
-     */    
-    public static function ordinalize($number) {
-        $test = (intval($number) % 100);
-        if($test >= 11 && $test <= 13) {
-            $number = "{$number}th";
-        } else {
-            switch((intval($number) % 10)) {
-                case 1:
-                    $number = "{$number}st";
-                    break;
-                case 2:
-                    $number = "{$number}nd";
-                    break;
-                case 3:
-                    $number = "{$number}rd";
-                    break;
-                default:
-                    $number = "{$number}th"; 
-            }    
-        }
-        return $number;
+			return self::underscore($class_name) . "_id";
     }
 }
 ?>

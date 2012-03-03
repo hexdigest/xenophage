@@ -11,9 +11,6 @@ class XWidget implements Drawable, Iterator {
 	protected $_owner = null;
 	protected $_name = null;
 
-	public static $_drawed = array();
-	
-	public $_db_type = null;
 	public $_current = null;
 	public $_key = null;
 
@@ -30,20 +27,19 @@ class XWidget implements Drawable, Iterator {
 	}
 
 	public function __set($name, $value) { 
-		$name = str_replace(' ', '_', $name);
-
-		if (null === $value) {
-			if (isset($this->_properties[$name]))
-				unset($this->_properties[$name]);
-
-			return;
-		}
-		
 		//tell the widget who it's owner
 		if (is_object($value) && is_subclass_of($value, 'XWidget')) 
 			$value->initialize($this, $name);
 
 		$this->_properties[$name] = $value;
+	}
+
+	public function __unset($name) { 
+		unset($this->_properties[$name]);
+	}
+
+	public function __isset($name) { 
+		return isset($this->_properties[$name]);
 	}
 	
 	public function __get($name) { 
@@ -65,8 +61,6 @@ class XWidget implements Drawable, Iterator {
 		if (is_object($var)) {
 			if ($var instanceof Drawable) {
 				return $var->_draw();
-			} elseif (is_a($var, 'LazyValue')) {
-				return (string) $var;
 			} elseif (is_a($var, 'DOMElement')) {
 				return array(':xml' => $var->ownerDocument->saveXML($var));
 			} elseif (is_a($var, 'DOMDocument')) {
@@ -93,11 +87,10 @@ class XWidget implements Drawable, Iterator {
 		$result = array();
 		foreach ($array as $key => $val) {
 			if (is_numeric($key)) {
-				$id = (is_object($val) && ($tmp = $val->id)) ? (string)$tmp : $key;
+				$id = (is_object($val) && ($tmp = $val->id)) ? (string) $tmp : $key;
 				$result[] = array_merge(array(':attributes' => array('id' => $id)),
 					$this->_draw_var($val));
 			} else {
-				$key = preg_replace('/[^\w:а-яё_]/ui','',str_replace(' ', '_', $key));
 				$result[$key] = $this->_draw_var($val);
 			}
 		}
@@ -119,8 +112,6 @@ class XWidget implements Drawable, Iterator {
 	}
 
 	public function _draw() {
-		self::$_drawed[$this->_class] = true;
-		
 		$result = array();
 
 		if ($this->_title !== null)
@@ -136,13 +127,6 @@ class XWidget implements Drawable, Iterator {
 		return $result;
 	}
 	
-	/**
-	* Unset all properties
-	*/
-	public function clear() { 
-		$this->_properties = array();
-	}
-
 	/**
 	* Sets title of an element
 	*/
@@ -210,30 +194,6 @@ class XWidget implements Drawable, Iterator {
 		}
 
 		return $widgets;
-	}
-
-	public function swap_properties($name1, $name2) { 
-		$result_properties = array();
-
-		foreach ($this->_properties as $key=>$value) { 
-			if ($key == $name1) {
-				$key = $name2;
-				$value = $this->$name2;
-			} elseif ($key == $name2) {
-				$key = $name1;
-				$value = $this->$name1;
-			}
-
-			$result_properties[$key] = $value;
-		}
-
-		$this->_properties = $result_properties;
-	}
-
-	public function __clone() {
-		foreach ($this->_properties as $key => $value) 
-			if (is_object($value) || is_array($value))
-				$this->_properties[$key] = unserialize(serialize($value));
 	}
 
 	public static function is_numeric_array($array) {
